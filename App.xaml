@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Easy.Agent.App">
+    <Application.Resources>
+        <ResourceDictionary>
+            <Color x:Key="Bg">#0d1117</Color>
+            <Color x:Key="Panel">#161b22</Color>
+            <Color x:Key="PanelAlt">#21262d</Color>
+            <Color x:Key="Fg">#e6edf3</Color>
+            <Color x:Key="Dim">#8b98a9</Color>
+            <Color x:Key="Accent">#2563eb</Color>
+            <Color x:Key="Warn">#d97706</Color>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
