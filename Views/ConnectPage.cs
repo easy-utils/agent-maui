@@ -4,7 +4,7 @@ namespace Easy.Agent.Views;
 
 public partial class ConnectPage : ContentPage
 {
-    private const string DefaultBase = "https://agent.temp.10.199.64.20.nip.io";
+    private const string DefaultBase = "https://agent.agent.10.199.64.20.nip.io";
 
     private readonly Entry _base;
     private readonly Entry _token;
