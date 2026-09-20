@@ -85,8 +85,9 @@ public partial class ConnectPage : ContentPage
         {
             var api = AgentApp.CreateApi(baseUrl, token);
             await api.HealthAsync();
+            var username = await api.ResolveUsernameAsync();
             _status.Text = "";
-            await Navigation.PushAsync(new SessionsPage(api));
+            await Navigation.PushAsync(new SessionsPage(api, new AppNav.NavStore(), username));
         }
         catch (Exception ex)
         {

@@ -9,10 +9,14 @@ public partial class SessionsPage : ContentPage
     private readonly CollectionView _list;
     private readonly ObservableCollection<string> _sessions = new();
     private readonly Label _status;
+    private readonly AppNav.NavStore _nav;
+    private readonly string _username;
 
-    public SessionsPage(AgentApi api)
+    public SessionsPage(AgentApi api, AppNav.NavStore nav, string username)
     {
         _api = api;
+        _nav = nav;
+        _username = username;
         Title = "Sessions";
         BackgroundColor = Color.FromArgb("#0d1117");
 
@@ -46,6 +50,12 @@ public partial class SessionsPage : ContentPage
         newBtn.Clicked += OnNew;
         var refreshBtn = new Button { Text = "Refresh", BackgroundColor = Color.FromArgb("#21262d"), TextColor = Color.FromArgb("#e6edf3") };
         refreshBtn.Clicked += async (_, _) => await RefreshAsync();
+        var settingsBtn = new Button { Text = "Settings", BackgroundColor = Color.FromArgb("#21262d"), TextColor = Color.FromArgb("#e6edf3") };
+        settingsBtn.Clicked += async (_, _) =>
+        {
+            _nav.Tab = "config";
+            await Navigation.PushAsync(new ConfigPage(_api, _nav, _username));
+        };
 
         _status = new Label { TextColor = Color.FromArgb("#8b98a9"), LineBreakMode = LineBreakMode.WordWrap };
 
@@ -74,6 +84,7 @@ public partial class SessionsPage : ContentPage
                         },
                         newBtn,
                         refreshBtn,
+                        settingsBtn,
                     },
                 }),
                 Place(_list, 1),
@@ -128,6 +139,9 @@ public partial class SessionsPage : ContentPage
     {
         if (e.CurrentSelection.FirstOrDefault() is not string id) return;
         _list.SelectedItem = null;
+        _nav.Tab = "chat";
+        _nav.ActiveSessionId = id;
+        _nav.Push("chat_session");
         await Navigation.PushAsync(new ChatPage(_api, id));
     }
 }

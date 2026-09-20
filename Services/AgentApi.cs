@@ -31,6 +31,79 @@ public sealed class AgentApi
         await _rpc.health(new HealthRequest());
     }
 
+    /// <summary>The caller's resolved identity (tenant id/name + role).</summary>
+    public async Task<(string Tenant, string TenantName, string Role)> IdentityAsync(
+        CancellationToken ct = default)
+    {
+        var r = await _rpc.getIdentity(new GetIdentityRequest());
+        return (r.Tenant, r.TenantName, r.Role);
+    }
+
+    /// <summary>Best-effort display name for the saved-backend list.</summary>
+    public async Task<string> ResolveUsernameAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var (tenant, name, _) = await IdentityAsync(ct);
+            return string.IsNullOrEmpty(name) ? tenant : name;
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    /// <summary>Only model/preset/locale/variant are client-editable (proto v0.18).</summary>
+    public async Task SettingsAsync(string id, string model = "", string preset = "",
+        string locale = "", string variant = "", CancellationToken ct = default)
+    {
+        await _rpc.updateSettings(new UpdateSettingsRequest
+        {
+            Id = id,
+            Model = model,
+            Preset = preset,
+            Locale = locale,
+            Variant = variant,
+        });
+    }
+
+    public async Task<List<string>> ListPresetsAsync(string locale = "",
+        CancellationToken ct = default)
+    {
+        var r = await _rpc.listPresets(new ListPresetsRequest { Locale = locale });
+        return r.Presets.Select(p => p.Id).ToList();
+    }
+
+    public async Task<List<string>> ListProvidersAsync(CancellationToken ct = default)
+    {
+        var r = await _rpc.listProviders(new ListProvidersRequest());
+        return r.Providers.Select(p => $"{p.ProviderId} · {p.Capability}").ToList();
+    }
+
+    public async Task<List<string>> ListToolsAsync(string locale = "",
+        CancellationToken ct = default)
+    {
+        var r = await _rpc.listTools(new ListToolsRequest { Locale = locale });
+        return r.Tools.Select(t => t.Name).ToList();
+    }
+
+    public async Task<string> GetConfigAsync(string key, CancellationToken ct = default)
+    {
+        var r = await _rpc.getConfig(new GetConfigRequest { Key = key });
+        return r.Value;
+    }
+
+    public async Task SetConfigAsync(string key, string value, CancellationToken ct = default)
+    {
+        await _rpc.setConfig(new SetConfigRequest { Key = key, Value = value });
+    }
+
+    public async Task<List<string>> MailboxAsync(string id, CancellationToken ct = default)
+    {
+        var r = await _rpc.mailbox(new MailboxRequest { Id = id });
+        return r.Mailbox.Select(m => $"{m.MsgType} · {m.Status}").ToList();
+    }
+
     public async Task<List<string>> ListSessionsAsync(CancellationToken ct = default)
     {
         var r = await _rpc.listSessions(new ListSessionsRequest());
