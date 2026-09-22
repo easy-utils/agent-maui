@@ -98,10 +98,32 @@ public sealed class AgentApi
         await _rpc.setConfig(new SetConfigRequest { Key = key, Value = value });
     }
 
-    public async Task<List<string>> MailboxAsync(string id, CancellationToken ct = default)
+    /// <summary>One page of the mailbox (NEWEST-FIRST, paged backward).</summary>
+    public async Task<(List<string> Entries, bool HasMore)> MailboxAsync(string id,
+        string before = "", int limit = 0, CancellationToken ct = default)
     {
-        var r = await _rpc.mailbox(new MailboxRequest { Id = id });
-        return r.Mailbox.Select(m => $"{m.MsgType} · {m.Status}").ToList();
+        var r = await _rpc.mailbox(new MailboxRequest { Id = id, Before = before, Limit = limit });
+        var entries = r.Mailbox
+            .Select(m => $"{MailboxLabel(m.MsgType, m.Source)} · {m.Status}")
+            .ToList();
+        return (entries, r.HasMore);
+    }
+
+    /// <summary>(msgType, source) → a human label (mirrors the other clients).</summary>
+    private static string MailboxLabel(string msgType, string source)
+    {
+        if (msgType == "interrupt") return "Interrupt";
+        if (msgType != "trigger") return "Event";
+        if (source == "user") return "Message";
+        if (source.StartsWith("session:")) return $"From session · {source["session:".Length..]}";
+        if (source.StartsWith("system:")) return $"From system · {source["system:".Length..]}";
+        return "Message";
+    }
+
+    /// <summary>Fork a session WITHOUT opening it.</summary>
+    public async Task ForkAsync(string id, string branch, CancellationToken ct = default)
+    {
+        await _rpc.fork(new ForkRequest { Id = id, Name = branch });
     }
 
     public async Task<List<string>> ListSessionsAsync(CancellationToken ct = default)
@@ -169,12 +191,15 @@ public sealed class AgentApi
         var lines = new List<string>();
         foreach (var m in messages)
         {
-            var who = m.Role switch
-            {
-                "user" => "You",
-                "assistant" => "Agent",
-                _ => m.Role,
-            };
+            // A `session:{name}` hand-off is labelled with its origin.
+            var who = m.Source.StartsWith("session:") ? $"[{m.Source["session:".Length..]}]"
+                : m.Source.StartsWith("system:") ? $"[system:{m.Source["system:".Length..]}]"
+                : m.Role switch
+                {
+                    "user" => "You",
+                    "assistant" => "Agent",
+                    _ => m.Role,
+                };
             foreach (var p in m.Parts)
             {
                 var d = ParseJson(p.Data);

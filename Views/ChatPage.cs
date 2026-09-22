@@ -126,6 +126,19 @@ public partial class ChatPage : ContentPage
     {
         switch (ev)
         {
+            case "message-added":
+                // The server authored a message id/position: render the user
+                // prompt (no client-optimistic bubble) with its origin.
+                var role = p.GetValueOrDefault("role", "assistant");
+                if (role == "user")
+                {
+                    var src = p.GetValueOrDefault("source", "");
+                    var label = src.StartsWith("session:") ? $"[{src["session:".Length..]}]"
+                        : src.StartsWith("system:") ? $"[system:{src["system:".Length..]}]"
+                        : "You";
+                    MainThread.BeginInvokeOnMainThread(() => Push($"{label}: "));
+                }
+                break;
             case "text-delta":
                 MainThread.BeginInvokeOnMainThread(() => Append(p.GetValueOrDefault("text", "")));
                 break;
@@ -145,7 +158,8 @@ public partial class ChatPage : ContentPage
         var text = _composer.Text?.Trim() ?? "";
         if (text.Length == 0) return;
         _composer.Text = "";
-        Push($"You: {text}");
+        // The user bubble is now server-authored (message-added); show only the
+        // Agent reply placeholder.
         Push("Agent: ");
         try
         {

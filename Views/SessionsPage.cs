@@ -33,7 +33,7 @@ public partial class SessionsPage : ContentPage
                     VerticalOptions = LayoutOptions.Center,
                 };
                 label.SetBinding(Label.TextProperty, ".");
-                return new Border
+                var card = new Border
                 {
                     BackgroundColor = Color.FromArgb("#161b22"),
                     StrokeThickness = 0,
@@ -42,6 +42,20 @@ public partial class SessionsPage : ContentPage
                     StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle(),
                     Content = label,
                 };
+                // Swipe right → Fork (without opening). MAUI has no cross-platform
+                // long-press context menu, so swipe is the native affordance.
+                var swipe = new SwipeView { Content = card };
+                var forkItem = new SwipeItem
+                {
+                    Text = "Fork",
+                    BackgroundColor = Color.FromArgb("#2563eb"),
+                };
+                forkItem.Invoked += async (_, _) =>
+                {
+                    if (!string.IsNullOrEmpty(label.Text)) await ForkAsync(label.Text);
+                };
+                swipe.RightItems = new SwipeItems { forkItem };
+                return swipe;
             }),
         };
         _list.SelectionChanged += OnSelected;
@@ -143,5 +157,19 @@ public partial class SessionsPage : ContentPage
         _nav.ActiveSessionId = id;
         _nav.Push("chat_session");
         await Navigation.PushAsync(new ChatPage(_api, id));
+    }
+
+    /// <summary>Fork a session WITHOUT opening it (swipe action).</summary>
+    private async Task ForkAsync(string id)
+    {
+        try
+        {
+            await _api.ForkAsync(id, $"fork-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            _status.Text = $"Fork failed: {ex.Message}";
+        }
     }
 }

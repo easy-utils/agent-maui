@@ -156,7 +156,7 @@ public partial class MailboxPage : ContentPage
         Content = list;
         Loaded += async (_, _) =>
         {
-            var rows = await api.MailboxAsync(sessionId);
+            var (rows, _hasMore) = await api.MailboxAsync(sessionId, limit: 30);
             _rows.Clear();
             foreach (var r in rows) _rows.Add(r);
         };

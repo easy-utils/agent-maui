@@ -39,7 +39,7 @@
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
 		<PackageReference Include="EasyRpc" Version="3.0.0" />
-		<PackageReference Include="AgentSdkCsharp" Version="0.18.0" />
+		<PackageReference Include="AgentSdkCsharp" Version="0.19.0" />
 	</ItemGroup>
 
 </Project>
