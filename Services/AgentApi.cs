@@ -129,7 +129,25 @@ public sealed class AgentApi
     public async Task<List<string>> ListSessionsAsync(CancellationToken ct = default)
     {
         var r = await _rpc.listSessions(new ListSessionsRequest());
-        return r.Sessions.Select(s => s.Name).ToList();
+        // Ordered most-recent-first (lastMessageAt -> updatedAt -> createdAt).
+        return r.Sessions
+            .OrderByDescending(SessionRecency)
+            .Select(s => s.Name)
+            .ToList();
+    }
+
+    /// <summary>Epoch-ms recency: lastMessageAt -> updatedAt -> createdAt.</summary>
+    private static long SessionRecency(Session s)
+    {
+        foreach (var v in new[] { s.LastMessageAt, s.UpdatedAt, s.CreatedAt })
+        {
+            if (!string.IsNullOrEmpty(v) &&
+                DateTimeOffset.TryParse(v, out var d))
+            {
+                return d.ToUnixTimeMilliseconds();
+            }
+        }
+        return 0;
     }
 
     public async Task<string> CreateSessionAsync(string name, CancellationToken ct = default)
