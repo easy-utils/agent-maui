@@ -150,6 +150,10 @@ public partial class ChatPage : ContentPage
                 var name = p.GetValueOrDefault("toolName") ?? p.GetValueOrDefault("name") ?? "tool";
                 MainThread.BeginInvokeOnMainThread(() => Push($"\n[tool: {name}]\n"));
                 break;
+            case "error":
+                MainThread.BeginInvokeOnMainThread(() =>
+                    Push($"\n[Model error: {p.GetValueOrDefault("message", "Unknown error")}]\n"));
+                break;
         }
     }
 
@@ -158,6 +162,8 @@ public partial class ChatPage : ContentPage
         var text = _composer.Text?.Trim() ?? "";
         if (text.Length == 0) return;
         _composer.Text = "";
+        // An error is TRANSIENT: a new prompt clears any prior error line.
+        ClearErrors();
         // The user bubble is now server-authored (message-added); show only the
         // Agent reply placeholder.
         Push("Agent: ");
@@ -167,7 +173,18 @@ public partial class ChatPage : ContentPage
         }
         catch (Exception ex)
         {
-            Append($"\n[error: {ex.Message}]");
+            // The title says what failed; the body is the raw error.
+            Push($"\n[Send failed: {ex.Message}]");
+        }
+    }
+
+    /// <summary>Drop any error lines (a new send makes an error transient).</summary>
+    private void ClearErrors()
+    {
+        for (var i = _lines.Count - 1; i >= 0; i--)
+        {
+            if (_lines[i].Contains("failed:") || _lines[i].Contains("error:"))
+                _lines.RemoveAt(i);
         }
     }
 
